@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Hub - Our Family Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .birthday-alert {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">👨‍👩‍👧‍👦 Family Hub</h1>
+            <p class="text-gray-600">Keep track of our family details and never miss a birthday!</p>
+        </div>
+
+        <!-- Birthday Reminders -->
+        <div id="birthdayReminders" class="mb-8"></div>
+
+        <!-- Add Family Member Form -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">➕ Add Family Member</h2>
+            <form id="familyForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input type="text" id="name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                    <input type="date" id="dob" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Relationship</label>
+                    <select id="relationship" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="">Select relationship</option>
+                        <option value="Father">Father</option>
+                        <option value="Mother">Mother</option>
+                        <option value="Son">Son</option>
+                        <option value="Daughter">Daughter</option>
+                        <option value="Brother">Brother</option>
+                        <option value="Sister">Sister</option>
+                        <option value="Grandfather">Grandfather</option>
+                        <option value="Grandmother">Grandmother</option>
+                        <option value="Uncle">Uncle</option>
+                        <option value="Aunt">Aunt</option>
+                        <option value="Cousin">Cousin</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                    <input type="tel" id="phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Likes</label>
+                    <input type="text" id="likes" placeholder="e.g., Reading, Cooking, Sports" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Dislikes</label>
+                    <input type="text" id="dislikes" placeholder="e.g., Spicy food, Loud music" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
+                    <textarea id="notes" rows="3" placeholder="Any other details about this family member..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"></textarea>
+                </div>
+                <div class="md:col-span-2">
+                    <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200">
+                        Add Family Member
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Family Members Display -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">👥 Our Family</h2>
+            <div id="familyMembers" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Family member cards will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load family data from localStorage
+        let familyData = JSON.parse(localStorage.getItem('familyData')) || [];
+
+        // Form submission
+        document.getElementById('familyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newMember = {
+                id: Date.now(),
+                name: document.getElementById('name').value,
+                dob: document.getElementById('dob').value,
+                relationship: document.getElementById('relationship').value,
+                phone: document.getElementById('phone').value,
+                likes: document.getElementById('likes').value,
+                dislikes: document.getElementById('dislikes').value,
+                notes: document.getElementById('notes').value
+            };
+
+            familyData.push(newMember);
+            localStorage.setItem('familyData', JSON.stringify(familyData));
+            
+            // Reset form
+            this.reset();
+            
+            // Refresh displays
+            displayFamilyMembers();
+            checkUpcomingBirthdays();
+            
+            // Show success message
+            alert('Family member added successfully! 🎉');
+        });
+
+        // Display family members
+        function displayFamilyMembers() {
+            const container = document.getElementById('familyMembers');
+            
+            if (familyData.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center col-span-full">No family members added yet. Add your first family member above!</p>';
+                return;
+            }
+
+            container.innerHTML = familyData.map(member => {
+                const age = calculateAge(member.dob);
+                const nextBirthday = getNextBirthday(member.dob);
+                
+                return `
+                    <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition duration-200">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800">${member.name}</h3>
+                            <button onclick="deleteMember(${member.id})" class="text-red-500 hover:text-red-700 text-sm">✕</button>
+                        </div>
+                        
+                        <div class="space-y-2 text-sm">
+                            <p><span class="font-medium text-gray-600">Relationship:</span> ${member.relationship}</p>
+                            <p><span class="font-medium text-gray-600">Age:</span> ${age} years old</p>
+                            <p><span class="font-medium text-gray-600">Birthday:</span> ${formatDate(member.dob)}</p>
+                            <p><span class="font-medium text-gray-600">Next Birthday:</span> ${nextBirthday}</p>
+                            ${member.phone ? `<p><span class="font-medium text-gray-600">Phone:</span> ${member.phone}</p>` : ''}
+                            ${member.likes ? `<p><span class="font-medium text-gray-600">Likes:</span> ${member.likes}</p>` : ''}
+                            ${member.dislikes ? `<p><span class="font-medium text-gray-600">Dislikes:</span> ${member.dislikes}</p>` : ''}
+                            ${member.notes ? `<p><span class="font-medium text-gray-600">Notes:</span> ${member.notes}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Delete family member
+        function deleteMember(id) {
+            if (confirm('Are you sure you want to remove this family member?')) {
+                familyData = familyData.filter(member => member.id !== id);
+                localStorage.setItem('familyData', JSON.stringify(familyData));
+                displayFamilyMembers();
+                checkUpcomingBirthdays();
+            }
+        }
+
+        // Calculate age
+        function calculateAge(dob) {
+            const today = new Date();
+            const birthDate = new Date(dob);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            
+            return age;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        // Get next birthday
+        function getNextBirthday(dob) {
+            const today = new Date();
+            const birthDate = new Date(dob);
+            const thisYear = today.getFullYear();
+            
+            let nextBirthday = new Date(thisYear, birthDate.getMonth(), birthDate.getDate());
+            
+            if (nextBirthday < today) {
+                nextBirthday.setFullYear(thisYear + 1);
+            }
+            
+            const daysUntil = Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
+            
+            if (daysUntil === 0) {
+                return "🎉 Today!";
+            } else if (daysUntil === 1) {
+                return "🎂 Tomorrow!";
+            } else if (daysUntil <= 7) {
+                return `🎈 In ${daysUntil} days`;
+            } else {
+                return `In ${daysUntil} days`;
+            }
+        }
+
+        // Check upcoming birthdays
+        function checkUpcomingBirthdays() {
+            const container = document.getElementById('birthdayReminders');
+            const upcomingBirthdays = [];
+            
+            familyData.forEach(member => {
+                const today = new Date();
+                const birthDate = new Date(member.dob);
+                const thisYear = today.getFullYear();
+                
+                let nextBirthday = new Date(thisYear, birthDate.getMonth(), birthDate.getDate());
+                if (nextBirthday < today) {
+                    nextBirthday.setFullYear(thisYear + 1);
+                }
+                
+                const daysUntil = Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
+                
+                if (daysUntil <= 7) {
+                    upcomingBirthdays.push({
+                        ...member,
+                        daysUntil,
+                        nextBirthday
+                    });
+                }
+            });
+            
+            if (upcomingBirthdays.length > 0) {
+                upcomingBirthdays.sort((a, b) => a.daysUntil - b.daysUntil);
+                
+                container.innerHTML = `
+                    <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl p-6 birthday-alert">
+                        <h2 class="text-2xl font-bold mb-4">🎉 Upcoming Birthdays!</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${upcomingBirthdays.map(member => `
+                                <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                                    <h3 class="font-semibold text-lg">${member.name}</h3>
+                                    <p class="text-sm opacity-90">${member.relationship}</p>
+                                    <p class="font-medium mt-2">
+                                        ${member.daysUntil === 0 ? '🎂 Today!' : 
+                                          member.daysUntil === 1 ? '🎈 Tomorrow!' : 
+                                          `🎁 In ${member.daysUntil} days`}
+                                    </p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = '';
+            }
+        }
+
+        // Initialize the page
+        displayFamilyMembers();
+        checkUpcomingBirthdays();
+
+        // Check for birthdays every hour
+        setInterval(checkUpcomingBirthdays, 3600000);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96b7abfe67fcda50',t:'MTc1NDU3OTEyMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
